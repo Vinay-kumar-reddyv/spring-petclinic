@@ -1,0 +1,41 @@
+##This pipeline Builds Maven project and send the sttus through Mail using Choice parameters for maven goals. 
+
+pipeline {
+  agent { label 'spc' }
+  parameters {
+    choice(name: 'MAVEN_GOAL', choices: ['package', 'clean package'], description:'This is maven goal')
+  }
+  stages {
+    stage('git') {
+          steps {
+            git url: 'https://github.com/spring-projects/spring-petclinic.git',branch: 'main'
+          }
+    }
+    stage('build') {
+        steps {
+            mail bcc: '', body: 'Build started', cc: '', from: '', replyTo: '',subject: 'Build started', to: 'vinay.reddy1993@outlook.com'
+            sh "mvn ${params.MAVEN_GOAL}"
+            junit testResults: '**/surefire-reports/*.xml'
+            archive '**/target/spring-petclinic-*.jar'
+            mail bcc: '', body: 'Build completed', cc: '', from: '', replyTo: '',subject: 'Build completed', to: 'vinay.reddy1993@gmail.com'  
+        }  
+        
+        post {
+            failure {
+                mail bcc: 'vinay.reddy1993@outlook.com', 
+                from: 'jenkins@outlook.com', 
+                to: "vinay.reddy1993@outlook.com", 
+                subject: "Build of ${JOB_BASE_NAME} with Build Id ${BUILD_ID} isfailed", 
+                body: "Refer to ${RUN_DISPLAY_URL} for more info"
+            }
+            success {
+                mail bcc: 'vinay.reddy@outlook.com', 
+                from: 'jenkins@outlook.com', 
+                to: "vinay.reddy1993@outlook.com", 
+                subject: "Build of ${JOB_BASE_NAME} with Build Id ${BUILD_ID} issuccess", 
+                body: "Refer to ${RUN_DISPLAY_URL} for more info"
+            }  
+        } 
+    }  
+  }
+}
